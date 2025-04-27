@@ -3,7 +3,7 @@
 #include "Snake.h"
 #include "Apple.h"
 
-#define MAX_LENGTH 100 // Max length for the snake (assuming maximum body size)
+#define MAX_LENGTH 100 // Max length for the snake
 
 class Game {
     public:

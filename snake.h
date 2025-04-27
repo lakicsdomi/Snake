@@ -1,7 +1,7 @@
 #ifndef SNAKE_H
 #define SNAKE_H
 
-#define MAX_LENGTH 100 // Max length for the snake (assuming maximum body size)
+#define MAX_LENGTH 100 // Max length for the snake
 
 class Snake {
 public:
