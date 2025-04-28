@@ -2,6 +2,8 @@
 
 This project is a simple implementation of the classic Snake game using an Arduino Uno. The game is programmed in C++ and designed to run on Arduino hardware. It is an excellent project for beginners in electronics and programming, as well as for enthusiasts looking to recreate a nostalgic game on Arduino.
 
+![image](https://github.com/user-attachments/assets/6d0b15c2-bf21-497a-ac7e-d52eb3ae4bca)
+
 ## Youtube video
 [Snake game console for Arduino](https://www.youtube.com/watch?v=QkUwiWnua5w)
 
