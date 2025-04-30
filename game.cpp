@@ -3,10 +3,11 @@
 Game::Game(int rows, int cols, int initSize) : snake(3), apple(rows, cols), gameRunning(false), rows(rows), cols(cols), initSize(initSize) {}
 
 void Game::startGame() {
+    gameRunning = true;
     snake = Snake(initSize);  // Reset the snake
     apple = Apple(rows,cols);
-    apple.spawnApple();
-    gameRunning = true;
+    apple.spawnApple(snake);
+    
 }
 
 void Game::stopGame() {
@@ -14,21 +15,36 @@ void Game::stopGame() {
     gameRunning = false;
 }
 
-void Game::update(char direction) {
-  // Update the snake's position based on the given direction
-  snake.move(direction);  // Move the snake based on the current direction
+int  Game::update(char direction) {
+    if (!gameRunning) return -1; // Skip updates if the game is not running
 
-  // Check if the snake collides with the wall or itself
-  if (snake.checkCollision(rows, cols)) {
-    stopGame();  // Stop the game if collision happens
-  }
+    int intDirection;
+    switch (direction) {
+        case 'W': intDirection = 0; break; // Up
+        case 'D': intDirection = 1; break; // Right
+        case 'S': intDirection = 2; break; // Down
+        case 'A': intDirection = 3; break; // Left
+        default: return -1; // Invalid direction, skip update
+    }
 
-  // Check if the snake eats an apple
-  if (apple.isEaten(snake.getHeadX(), snake.getHeadY())) {
-    snake.grow();   // Grow the snake
-    apple.spawnApple();  // Spawn a new apple
-  }
+    // Move the snake
+    snake.move(intDirection);
+
+    // Check for collisions
+    if (snake.checkCollision(rows, cols)) {
+        stopGame();
+        return 1;
+    }
+
+    // Check if the snake eats the apple
+    if (apple.isEaten(snake.getHeadX(), snake.getHeadY())) {
+        snake.grow();
+        apple.spawnApple(snake); // Ensure apple avoids the snake's body
+        return 2;
+    }
+    return 0;
 }
+
 
 void Game::getSnakeBody(int body[MAX_LENGTH][2], int &lengthOut) const {
   // Get the snake's body coordinates and length

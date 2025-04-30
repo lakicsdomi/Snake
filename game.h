@@ -10,7 +10,7 @@ class Game {
         Game(int rows, int cols, int initSize);                             // Constructor to initialize the game with grid size and initial snake length
         void startGame();                                                   // Start the game by initializing the snake and apple
         void stopGame();                                                    // Stop the game
-        void update(char direction);                                        // Update game state
+        int update(char direction);                                        // Update game state
         void getSnakeBody(int body[MAX_LENGTH][2], int &lengthOut) const;   // Get snake body
         int getAppleX();                                                    // Get apple's X position
         int getAppleY();                                                    // Get apple's Y position

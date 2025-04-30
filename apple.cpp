@@ -1,14 +1,30 @@
 #include "Apple.h"
 #include <stdlib.h>  // for rand and srand
 #include <time.h>    // for seeding the random number generator
-
+#include "Snake.h"
 Apple::Apple(int rows, int cols) : rows(rows), cols(cols), x(-1), y(-1) {}
 
-void Apple::spawnApple() {
-    // Generate a random position for the apple
-    x = rand() % cols;  // random X position within the width
-    y = rand() % rows;  // random Y position within the height
+void Apple::spawnApple(const Snake &snake) {
+    bool validPosition = false;
+    while (!validPosition) {
+        x = random(0, rows);  // Generate random position
+        y = random(0, cols);
+        validPosition = true;
+
+        // Check if the new position overlaps with the snake
+        int snakeBody[MAX_LENGTH][2];
+        int snakeLength = 0;
+        snake.getBody(snakeBody, snakeLength);
+
+        for (int i = 0; i < snakeLength; i++) {
+            if (snakeBody[i][0] == x && snakeBody[i][1] == y) {
+                validPosition = false;
+                break;
+            }
+        }
+    }
 }
+
 
 bool Apple::isEaten(int snakeHeadX, int snakeHeadY) {
     // Check if the apple is eaten by comparing its position with the snake's head position

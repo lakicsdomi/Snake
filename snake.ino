@@ -31,6 +31,7 @@ Joystick joystick(X_pin, Y_pin);            // Create Joystick object
 LedControl lc = LedControl(12, 10, 11, 1); // MAX7219 dotmatrix module
 
 void setup() {
+  lc.shutdown(0, false);  // Wake up MAX7219
   lc.setIntensity(0, 5);
   lc.clearDisplay(0);
 
@@ -38,14 +39,19 @@ void setup() {
   pinMode(buzzer, OUTPUT);
   digitalWrite(SW_pin, HIGH);
   pinMode(button, INPUT_PULLUP);
-
+  doBlink();
   Serial.begin(9600);
+
+  Serial.println("Setup complete. Game ready to start.");
 }
 
 void loop() {
   if (digitalRead(button) == LOW && !isOn) {
+    Serial.println("Game ON button pressed.");
     gameOn();
+
   } else if (digitalRead(button) == LOW && isOn) {
+    Serial.println("Game OFF button pressed.");
     gameOff();
   }
 
@@ -55,70 +61,148 @@ void loop() {
 }
 
 void gameOn() {
+  doLoadInAnimation();
   isOn = true;
-  gameObj.startGame();  // Start the game by initializing the snake and apple
-  currentDirection = 'D';  // Set initial direction
+  Serial.println("Game started.");
+  gameObj.startGame();
+  currentDirection = 'S';
   refreshGame();
 }
 
 void gameOff() {
   isOn = false;
-  gameObj.stopGame();  // Stop the game
+  Serial.println("Game stopped.");
+  gameObj.stopGame();
   lc.clearDisplay(0);
 }
 
-char getDirection() {
+void getDirection() {
   X_axis = analogRead(X_pin);
   Y_axis = analogRead(Y_pin);
-  char newDirection = joystick.getDirection(X_axis, Y_axis);  // Get joystick direction
 
-  // Prevent reversing direction directly
+  Serial.print("Joystick X: ");
+  Serial.print(X_axis);
+  Serial.print(", Y: ");
+  Serial.println(Y_axis);
+
+  char newDirection = joystick.getDirection(X_axis, Y_axis);
+
   if ((currentDirection == 'W' && newDirection == 'S') ||
       (currentDirection == 'S' && newDirection == 'W') ||
       (currentDirection == 'A' && newDirection == 'D') ||
       (currentDirection == 'D' && newDirection == 'A')) {
-    return ' '; // Ignore invalid direction change
+    Serial.println("Invalid direction change ignored.");
+    newDirection = ' ';
   }
 
-  return newDirection;
+  
+  if (newDirection != ' ') {
+    currentDirection = newDirection;
+    Serial.print("Current direction updated to: ");
+    Serial.println(currentDirection);
+  }
+  
+  Serial.print("New direction: ");
+  Serial.println(newDirection);
+
 }
 
 void runSnakeGame() {
-  // Read joystick values to get the movement direction
-  char direction = getDirection();
-  if (direction != ' ') {
-    currentDirection = direction;
+  
+  getDirection();
+  int result = gameObj.update(currentDirection);
+  if(result == 2){
+      beepNTimes(1,50);
   }
 
-  // Update the game state based on the joystick direction
-  gameObj.update(currentDirection);
-
-  // If the game is over, stop it
-  if (!gameObj.isRunning()) {
+  if (!gameObj.isRunning()) {   
+    Serial.println("Game over detected.");
+    doGameOverAnimation();
     gameOff();
     return;
   }
 
-  // Refresh the display with the current game state
   refreshGame();
-  delay(refreshRate);  // Wait before the next update
+  delay(refreshRate);
 }
 
 void refreshGame() {
-  lc.clearDisplay(0);  // Clear the display
+  lc.clearDisplay(0);
+    int snakeBody[MAX_LENGTH][2];
+    int snakeLength = 0;
+    gameObj.getSnakeBody(snakeBody, snakeLength);
 
-  // Draw the snake on the display
-  int snakeBody[MAX_LENGTH][2];
-  int snakeLength = 0;
-  gameObj.getSnakeBody(snakeBody, snakeLength);  // Get the snake's body
+    // Turn on LEDs for the snake
+    for (int i = 0; i < snakeLength; i++) {
+        lc.setLed(0, snakeBody[i][0], snakeBody[i][1], true);
+    }
 
-  // Loop through each part of the snake's body and display it
-  for (int i = 0; i < snakeLength; i++) {
-    lc.setLed(0, snakeBody[i][0], snakeBody[i][1], true);
+    // Display the apple
+    int appleX = gameObj.getAppleX();
+    int appleY = gameObj.getAppleY();
+    lc.setLed(0, appleX, appleY, true);
+}
+
+
+void beepNTimes(int times, int delayTime) {
+  for (int i = 0; i < times; i++) {
+    digitalWrite(buzzer, HIGH);
+    delay(delayTime);
+    digitalWrite(buzzer, LOW);
+    delay(delayTime);
+  }
+}
+
+void doBlink() {
+
+  // Flashes the screen 5 times very fast.
+
+  byte full[8] = {B11111111, B11111111, B11111111, B11111111, B11111111, B11111111, B11111111, B11111111}; //Fills all dots on matrix
+  for (int j = 0; j < 5; j++) {
+    for (int i = 0; i < 8; i++) {
+      lc.setRow(0, i, full[i]);
+    }
+    digitalWrite(buzzer, HIGH);
+    delay(50);
+    digitalWrite(buzzer, LOW);
+    lc.clearDisplay(0);
+    delay(50);
   }
 
-  // Draw the apple on the display
-  int appleX = gameObj.getAppleX();
-  int appleY = gameObj.getAppleY();
-  lc.setLed(0, appleX, appleY, true);  // Draw the apple
+}
+
+void doLoadInAnimation() {
+
+  // Starting animation
+
+  for (int j = 3; j > 0; j--) {
+    for (int i = 0; i < 8; i++) {
+      lc.setRow(0, i, B11111111);
+      digitalWrite(buzzer, HIGH);
+      delay(50);
+      digitalWrite(buzzer, LOW);
+      delay(50);
+    }
+    lc.clearDisplay(0);
+    delay(50);
+  }
+
+}
+
+void doGameOverAnimation() {
+
+  // Displays a trophy flashing
+
+  byte cross[8] = {B10000001, B01000010, B00100100, B00011000, B00011000, B00100100, B01000010, B10000001}; // 8 bytes that will display the trophy
+  for (int j = 0; j < 5; j++) {
+    for (int i = 0; i < 8; i++) {
+      lc.setRow(0, i, cross[i]);
+    }
+    digitalWrite(buzzer, HIGH);
+    delay(250);
+    digitalWrite(buzzer, LOW);
+    lc.clearDisplay(0);
+    delay(250);
+  }
+  delay(300);
 }
